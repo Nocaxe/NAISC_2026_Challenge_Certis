@@ -1,7 +1,9 @@
 from __future__ import annotations
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List, Literal
 from datetime import datetime
 from enum import Enum
+import uuid
 
 from sqlalchemy import String, Float, JSON, DateTime, Text, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -16,6 +18,76 @@ class SeverityLevel(str, Enum):
     MEDIUM = "medium"
     LOW = "low"
 
+
+# Pydantic API models
+class LogEvent(BaseModel):
+    event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    event_type: str  # DOOR_FORCED, FIRE_ALARM, ACCESS_DENIED, PANIC_BUTTON, LIFT_ALARM…
+    location: str
+    device_id: Optional[str] = None
+    details: dict = {}
+
+
+class VisionAssessment(BaseModel):
+    threat_detected: bool
+    threat_type: Optional[str] = None
+    confidence: float
+    description: str
+    evidence: List[str] = []
+    severity: Optional[SeverityLevel] = None
+    location: Optional[str] = None
+
+
+class AudioAssessment(BaseModel):
+    threat_detected: bool
+    threat_type: Optional[str] = None
+    confidence: float
+    description: str
+    evidence: List[str] = []
+    severity: Optional[SeverityLevel] = None
+    location: Optional[str] = None
+    transcript: Optional[str] = None
+
+
+class LogAssessment(BaseModel):
+    threat_detected: bool
+    threat_type: Optional[str] = None
+    confidence: float
+    description: str
+    evidence: List[str] = []
+    severity: Optional[SeverityLevel] = None
+    location: Optional[str] = None
+    triggered_rules: List[str] = []
+
+
+class Alert(BaseModel):
+    alert_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    severity: SeverityLevel
+    category: str
+    title: str
+    description: str
+    evidence: List[str]
+    recommended_actions: List[str]
+    contributing_agents: List[str]
+    confidence: float
+    location: str
+    status: Literal["active", "confirmed", "dismissed"] = "active"
+    camera_id: Optional[str] = None
+    frame_snapshot: Optional[str] = None  # base64 JPEG
+
+
+class AlertFeedback(BaseModel):
+    alert_id: str
+    outcome: Literal["confirmed", "dismissed"]
+    officer_note: Optional[str] = None
+
+
+class AudioInput(BaseModel):
+    transcript: str
+    source: str = "intercom"
+    location: Optional[str] = None
 
 
 # SQLAlchemy ORM models
