@@ -12,7 +12,6 @@ from fastapi import APIRouter, HTTPException
 from core.connections import manager
 from core.feedback import save_alert, save_feedback, update_alert_status
 from core.models import AudioInput, AlertFeedback, LogEvent
-from agents.log_agent import ingest_event
 from agents.graph import run_pipeline
 
 router = APIRouter(prefix="/api", tags=["inputs"])
@@ -36,7 +35,6 @@ async def submit_audio(body: AudioInput):
 @router.post("/logs/event")
 async def submit_log_event(event: LogEvent):
     """Ingest an access-control or alarm event and run the log-analysis pipeline."""
-    ingest_event(event)
     alert = await run_pipeline(log_events=[event.model_dump(mode="json")])
     if alert:
         await save_alert(alert)
